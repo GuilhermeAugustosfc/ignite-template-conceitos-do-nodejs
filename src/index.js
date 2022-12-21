@@ -47,7 +47,7 @@ app.post("/users", (request, response) => {
   };
   users.push(newUser);
 
-  return response.status(201).json({ name: name, username: username });
+  return response.status(201).json(newUser);
 });
 
 app.get("/todos", checksExistsUserAccount, (request, response) => {
@@ -75,12 +75,13 @@ app.post("/todos", checksExistsUserAccount, (request, response) => {
 app.put("/todos/:id", checksExistsUserAccount, (request, response) => {
   // Complete aqui
   const user = getUser(request.headers);
-  const id = request.params.id;
+  const idTodo = request.params.id;
+  const indexTodo = getIndexTodoById(user.username, idTodo);
 
   const new_title = request.body.title;
   const new_deadline = request.body.deadline;
-  if (user.todos && user.todos.hasOwnProperty(id)) {
-    const todo = user.todos[id];
+  if (indexTodo > -1) {
+    const todo = user.todos[indexTodo];
     todo.title = new_title;
     todo.deadline = new Date(new_deadline);
     return response.json(todo).status(201);
@@ -93,23 +94,28 @@ app.patch("/todos/:id/done", checksExistsUserAccount, (request, response) => {
   // Complete aqui
 
   const user = getUser(request.headers);
-  const id = request.params.id;
-  if (user.todos.hasOwnProperty(id)) {
-    const todo = user.todos[id];
+
+  const idTodo = request.params.id;
+  const indexTodo = getIndexTodoById(user.username, idTodo);
+  if (indexTodo > -1) {
+    const todo = user.todos[indexTodo];
     todo.done = true;
     return response.json(todo);
   } else {
     return response.status(404).send({ error: "not exits id todo" });
   }
 });
-
+function getIndexTodoById(username, idTodo) {
+  const indexUser = users.findIndex((user) => user.username == username);
+  return users[indexUser].todos.findIndex((todo) => todo.id == idTodo);
+}
 app.delete("/todos/:id", checksExistsUserAccount, (request, response) => {
   // Complete aqui
   const user = getUser(request.headers);
-  const id = request.params.id;
-
-  if (user.todos && user.todos.hasOwnProperty(id)) {
-    user.todos.splice(id, 1);
+  const idTodo = request.params.id;
+  const indexTodo = getIndexTodoById(user.username, idTodo);
+  if (user.todos && indexTodo > -1) {
+    user.todos.splice(indexTodo, 1);
     return response.status(204).json(user);
   } else {
     return response.status(404).send({ error: "not exits id todo" });
